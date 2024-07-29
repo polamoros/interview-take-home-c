@@ -53,7 +53,7 @@ Commit your changes regularly to show your progress.
 
 #### Aspects we value
 
-- No code, lint, or console errors
+- No code/lint/console errors
 - User experience and interface quality
 - Production-ready code
 - Effective use of TypeScript and libraries
