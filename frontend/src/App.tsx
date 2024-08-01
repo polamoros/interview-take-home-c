@@ -4,7 +4,7 @@ import { LeadsList } from './components/LeadsList'
 
 function App() {
   return (
-    <main className="main">
+    <main className="main bg-red-600">
       <div>
         <a href="https://genesy.ai" target="_blank">
           <img src={genesyLogo} className="logo genesy" alt="Genesy AI logo" />
