@@ -1,9 +1,9 @@
 export type Lead = {
   id: number
-  createdAt: string
-  updatedAt: string
   firstName: string
   lastName?: string
+  createdAt: string
+  updatedAt: string
   email?: string
   jobTitle?: string
   countryCode?: string
