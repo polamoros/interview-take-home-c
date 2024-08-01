@@ -29,7 +29,7 @@ const LeadTableItem: FC<{ lead: Lead; selected: boolean; onSelect: () => void }>
           type="checkbox"
           className={clsx(
             'absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded',
-            'border-genesy-300 focus:ring-genesy-600'
+            'border-genesy-700 text-genesy-700 focus:ring-genesy-700'
           )}
           value={lead.email}
           checked={selected}
@@ -50,7 +50,6 @@ const LeadTableItem: FC<{ lead: Lead; selected: boolean; onSelect: () => void }>
 }
 
 export const LeadsList: FC = () => {
-  const checkbox = useRef()
   const [checked, setChecked] = useState(false)
   const [indeterminate, setIndeterminate] = useState(false)
   const [selectedLeads, setSelectedLeads] = useState<Lead[]>([])
@@ -77,18 +76,19 @@ export const LeadsList: FC = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className={clsx('flex items-center gap-3 px-4 text-gray-200')}>
-        <div className="text-sm font-semibold py-2">
+      <div className="flex items-center gap-x-3 px-4 text-genesy-100 h-10">
+        <div className="text-sm font-semibold">
           {selectedLeads.length > 0 && <div>{selectedLeads.length} selected</div>}
           {selectedLeads.length === 0 && <div>{leads.data?.length} leads</div>}
         </div>
 
         {selectedLeads.length > 0 && (
           <>
-            <div className="w-0.5 h-6 bg-gray-600" />
-            <Button>Delete</Button>
+            <div className="w-0.5 h-6 bg-genesy-600" />
+            <Button disabled>Delete</Button>
             <Dropdown
               label="Enrich"
+              disabled
               items={[
                 { label: 'Gender' },
                 {
@@ -99,6 +99,7 @@ export const LeadsList: FC = () => {
           </>
         )}
       </div>
+
       <div className="w-full overflow-auto rounded-md">
         <table className="table-fixed divide-y bg-genesy-800 text-genesy-50 shadow-xl">
           <thead>
@@ -108,9 +109,8 @@ export const LeadsList: FC = () => {
                   type="checkbox"
                   className={clsx(
                     'absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded',
-                    'border-gray-300 text-gray-700 focus:ring-gray-700'
+                    'text-genesy-500 border-genesy-500 focus:ring-genesy-500'
                   )}
-                  ref={checkbox}
                   checked={checked}
                   onChange={toggleAll}
                 />

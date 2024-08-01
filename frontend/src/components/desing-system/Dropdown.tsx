@@ -11,13 +11,14 @@ export interface DropdownItem {
 export interface DropdownProps {
   label: string
   items: DropdownItem[]
+  disabled?: boolean
 }
 
-export const Dropdown = ({ label, items }: DropdownProps) => {
+export const Dropdown = ({ label, items, disabled }: DropdownProps) => {
   return (
     <Menu as="div" className="relative inline-block text-left">
       <div>
-        <MenuButton as={Button}>
+        <MenuButton as={Button} disabled={disabled}>
           {label}
           <ChevronDownIcon aria-hidden="true" className="-mr-1 h-5 w-5 text-gray-400" />
         </MenuButton>

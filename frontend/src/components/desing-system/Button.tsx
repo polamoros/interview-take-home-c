@@ -12,7 +12,8 @@ export const Button = ({ onClick, disabled, children }: PropsWithChildren<Button
       type="button"
       className={clsx(
         'flex gap-1 items-center',
-        'rounded-md px-2.5 py-1.5 text-sm font-semibold shadow-sm'
+        'rounded-md px-2.5 py-1.5 text-sm font-semibold shadow-sm',
+        disabled && 'opacity-50 cursor-not-allowed'
         //'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500'
         //'text-white bg-genesy-600 hover:bg-genesy-400'
       )}
