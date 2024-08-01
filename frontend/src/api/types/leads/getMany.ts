@@ -1,7 +1,5 @@
+import { Lead } from '.'
+
 export type LeadsGetManyInput = undefined
 
-export type LeadsGetManyOutput = {
-  id: number
-  firstName: string
-  email: string
-}[]
+export type LeadsGetManyOutput = Lead[]

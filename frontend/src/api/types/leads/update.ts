@@ -1,7 +1,5 @@
-export type LeadsUpdateInput = {
-  id: number
-  firstName: string
-  email: string
-}
+import { Lead } from '.'
+
+export type LeadsUpdateInput = Lead
 
 export type LeadsUpdateOutput = void
