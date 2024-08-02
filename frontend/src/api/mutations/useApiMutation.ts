@@ -124,5 +124,31 @@ const apiMutationsOptions = (queryClient: QueryClient) =>
           queryClient.invalidateQueries({ queryKey: ['leads', 'getMany'] })
         },
       }),
+
+      generateMessage: makeOptions({
+        mutationFn: api.leads.generateMessage,
+        onMutate: async (input) => {
+          await queryClient.cancelQueries({ queryKey: ['leads', 'getMany'] })
+
+          const previousValue = queryClient.getQueryData(['leads', 'getMany']) as
+            | ApiOutput<typeof api.leads.getMany>
+            | undefined
+
+          const newLeads = (previousValue ?? []).map((lead) =>
+            lead.id === input.id ? { ...lead, message: input.message } : lead
+          )
+
+          queryClient.setQueryData(['leads', 'getMany'], newLeads)
+
+          return { previousValue, newLeads }
+        },
+        onError: (_err, _input, context) => {
+          if (!context) return
+          queryClient.setQueryData(['leads', 'getMany'], context.previousValue)
+        },
+        onSettled: () => {
+          queryClient.invalidateQueries({ queryKey: ['leads', 'getMany'] })
+        },
+      }),
     },
   }) as const satisfies MutationsApi<typeof api>

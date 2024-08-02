@@ -8,4 +8,5 @@ export type Lead = {
   jobTitle?: string
   countryCode?: string
   companyName?: string
+  message?: string
 }

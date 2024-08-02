@@ -68,6 +68,44 @@ app.delete('/leads/:id', async (req: Request, res: Response) => {
   res.json()
 })
 
+app.post('/leads/:id/message', async (req: Request, res: Response) => {
+  const { id } = req.params
+  const { message } = req.body
+
+  const lead = await prisma.lead.findUnique({
+    where: {
+      id: Number(id),
+    },
+  })
+
+  const leadData = lead as { [key: string]: any }
+  const fields: string[] = message.match(/{(.*?)}/g) || []
+
+  const missingFields = fields.filter((field) => !leadData[field.slice(1, -1)])
+
+  let enrichedMessage = ''
+
+  // If there aren't missing fields, replace the variables with the lead data
+  if (missingFields.length === 0) {
+    enrichedMessage = message
+    fields.forEach((field) => {
+      const fieldName = field.slice(1, -1)
+      enrichedMessage = enrichedMessage.replace(field, leadData[fieldName])
+    })
+  }
+
+  const newLead = await prisma.lead.update({
+    where: {
+      id: Number(id),
+    },
+    data: {
+      message: enrichedMessage,
+    },
+  })
+
+  res.json(newLead)
+})
+
 app.listen(4000, () => {
   console.log('Express server is running on port 4000')
 })
