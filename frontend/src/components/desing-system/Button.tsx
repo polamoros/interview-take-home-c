@@ -2,20 +2,30 @@ import clsx from 'clsx'
 import { PropsWithChildren } from 'react'
 
 export interface ButtonProps {
-  disabled?: boolean
   onClick?: () => void
+  disabled?: boolean
+  transparent?: boolean
+  className?: string
 }
 
-export const Button = ({ onClick, disabled, children }: PropsWithChildren<ButtonProps>) => {
+export const Button = ({
+  onClick,
+  disabled,
+  transparent,
+  className,
+  children,
+}: PropsWithChildren<ButtonProps>) => {
   return (
     <button
       type="button"
       className={clsx(
-        'flex gap-1 items-center',
+        'flex gap-1 items-center outline-none',
         'rounded-md px-2.5 py-1.5 text-sm font-semibold shadow-sm',
-        disabled && 'opacity-50 cursor-not-allowed'
-        //'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500'
-        //'text-white bg-genesy-600 hover:bg-genesy-400'
+        disabled && 'opacity-50 cursor-not-allowed',
+        'border border-gray-300',
+        !transparent && 'bg-[#1a1a1a] text-white',
+        transparent && 'text-gray-700 bg-transparent hover:bg-gray-50',
+        className
       )}
       disabled={disabled}
       onClick={onClick}

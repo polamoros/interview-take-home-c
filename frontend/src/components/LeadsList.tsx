@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { FC, useCallback, useMemo, useRef, useState } from 'react'
-import { api } from '../api'
+import { FC, useCallback, useMemo, useState } from 'react'
+import { api, useApiMutation } from '../api'
 import { Lead } from '../api/types/leads'
 import clsx from 'clsx'
 import { Dropdown } from './desing-system/Dropdown'
 import { Button } from './desing-system/Button'
+import { Modal } from './desing-system/Modal'
 
 const LeadTableItem: FC<{ lead: Lead; selected: boolean; onSelect: () => void }> = ({
   lead,
@@ -50,28 +51,45 @@ const LeadTableItem: FC<{ lead: Lead; selected: boolean; onSelect: () => void }>
 }
 
 export const LeadsList: FC = () => {
-  const [checked, setChecked] = useState(false)
-  const [indeterminate, setIndeterminate] = useState(false)
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+
+  const [allChecked, setAllChecked] = useState(false)
   const [selectedLeads, setSelectedLeads] = useState<Lead[]>([])
 
-  const leads = useQuery({
+  const leadsQuery = useQuery({
     queryKey: ['leads', 'getMany'],
     queryFn: async () => api.leads.getMany(),
   })
 
-  const toggleAll = useCallback(() => {
-    const newSelectedLeads = checked || indeterminate ? [] : leads.data
-    setSelectedLeads(newSelectedLeads || [])
-    setChecked(!checked && !indeterminate)
-    setIndeterminate(false)
-  }, [checked, indeterminate, leads.data])
+  const leads = useMemo(() => leadsQuery.data ?? [], [leadsQuery.data])
 
-  if (leads.isLoading) {
+  const deleteLeadsMutation = useApiMutation('leads.delete')
+
+  const onDeleteSelectedLeads = useCallback(() => {
+    selectedLeads.forEach((lead) => {
+      try {
+        deleteLeadsMutation.mutate({ id: lead.id })
+      } catch (error) {
+        console.error(error)
+      }
+    })
+    setSelectedLeads([])
+    setDeleteModalVisible(false)
+  }, [deleteLeadsMutation, selectedLeads])
+
+  const toggleAll = useCallback(() => {
+    setSelectedLeads(allChecked ? [] : leads)
+    setAllChecked(!allChecked)
+  }, [allChecked, leads])
+
+  const isLoading = useMemo(() => leadsQuery.isLoading, [leadsQuery.isLoading])
+
+  if (isLoading) {
     return <div>Loading...</div>
   }
 
-  if (leads.isError) {
-    return <div>Error: {leads.error.message}</div>
+  if (leadsQuery.isError) {
+    return <div>Error: {leadsQuery.error.message}</div>
   }
 
   return (
@@ -79,13 +97,15 @@ export const LeadsList: FC = () => {
       <div className="flex items-center gap-x-3 px-4 text-genesy-100 h-10">
         <div className="text-sm font-semibold">
           {selectedLeads.length > 0 && <div>{selectedLeads.length} selected</div>}
-          {selectedLeads.length === 0 && <div>{leads.data?.length} leads</div>}
+          {selectedLeads.length === 0 && <div>{leads.length} leads</div>}
         </div>
 
         {selectedLeads.length > 0 && (
           <>
             <div className="w-0.5 h-6 bg-genesy-600" />
-            <Button disabled>Delete</Button>
+            <Button onClick={() => setDeleteModalVisible(true)} className="">
+              Delete
+            </Button>
             <Dropdown
               label="Enrich"
               disabled
@@ -107,11 +127,13 @@ export const LeadsList: FC = () => {
               <th className="relative px-7 sm:w-12 sm:px-6">
                 <input
                   type="checkbox"
+                  disabled={leads.length === 0}
                   className={clsx(
+                    'disabled:cursor-not-allowed disabled:opacity-50',
                     'absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded',
                     'text-genesy-500 border-genesy-500 focus:ring-genesy-500'
                   )}
-                  checked={checked}
+                  checked={allChecked}
                   onChange={toggleAll}
                 />
               </th>
@@ -127,7 +149,7 @@ export const LeadsList: FC = () => {
             </tr>
           </thead>
           <tbody className={clsx('divide-y divide-genesy-200 overflow-auto h-80', 'bg-genesy-600')}>
-            {leads.data?.map((lead) => (
+            {leads.map((lead) => (
               <LeadTableItem
                 key={lead.email}
                 lead={lead}
@@ -144,6 +166,21 @@ export const LeadsList: FC = () => {
           </tbody>
         </table>
       </div>
+      <Modal
+        title={`Delete ${selectedLeads.length} ${selectedLeads.length > 1 ? 'Leads' : 'Lead'}`}
+        onAccept={onDeleteSelectedLeads}
+        onCancel={() => setDeleteModalVisible(false)}
+        visible={deleteModalVisible}
+        setVisible={setDeleteModalVisible}
+        acceptLabel="Delete"
+        cancelLabel="Cancel"
+      >
+        <p className="text-sm text-gray-500">
+          Are you sure you want to delete the selected Leads?
+          <br />
+          This action <b>cannot be </b>undone.
+        </p>
+      </Modal>
     </div>
   )
 }
