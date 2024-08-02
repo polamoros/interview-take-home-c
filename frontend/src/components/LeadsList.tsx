@@ -167,7 +167,7 @@ export const LeadsList: FC = () => {
         </table>
       </div>
       <Modal
-        title="Delete leads"
+        title={`Delete ${selectedLeads.length} ${selectedLeads.length > 1 ? 'Leads' : 'Lead'}`}
         onAccept={onDeleteSelectedLeads}
         onCancel={() => setDeleteModalVisible(false)}
         visible={deleteModalVisible}
@@ -176,7 +176,9 @@ export const LeadsList: FC = () => {
         cancelLabel="Cancel"
       >
         <p className="text-sm text-gray-500">
-          Are you sure you want to delete the {selectedLeads.length} leads? This action cannot be undone.
+          Are you sure you want to delete the selected Leads?
+          <br />
+          This action <b>cannot be </b>undone.
         </p>
       </Modal>
     </div>
