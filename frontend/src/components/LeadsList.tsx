@@ -6,6 +6,7 @@ import clsx from 'clsx'
 import { Dropdown } from './desing-system/Dropdown'
 import { Button } from './desing-system/Button'
 import { LeadTableItem } from './LeadsTableItem'
+import { DeleteLeadsModal } from './DeleteLeadsModal'
 
 export const LeadsList: FC = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
@@ -122,21 +123,12 @@ export const LeadsList: FC = () => {
           </tbody>
         </table>
       </div>
-      <Modal
-        title={`Delete ${selectedLeads.length} ${selectedLeads.length > 1 ? 'Leads' : 'Lead'}`}
+
+      <DeleteLeadsModal
+        visible={deleteModalVisible}
         onAccept={onDeleteSelectedLeads}
         onCancel={() => setDeleteModalVisible(false)}
-        visible={deleteModalVisible}
-        setVisible={setDeleteModalVisible}
-        acceptLabel="Delete"
-        cancelLabel="Cancel"
-      >
-        <p className="text-sm text-gray-500">
-          Are you sure you want to delete the selected Leads?
-          <br />
-          This action <b>cannot be </b>undone.
-        </p>
-      </Modal>
+      />
     </div>
   )
 }
