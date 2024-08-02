@@ -108,9 +108,8 @@ export const LeadsList: FC = () => {
             </Button>
             <Dropdown
               label="Enrich"
-              disabled
               items={[
-                { label: 'Gender' },
+                { label: 'Gender', disabled: true },
                 {
                   label: 'Message',
                 },

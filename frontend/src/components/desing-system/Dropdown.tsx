@@ -6,6 +6,7 @@ import clsx from 'clsx'
 export interface DropdownItem {
   label: string
   onClick?: () => void
+  disabled?: boolean
 }
 
 export interface DropdownProps {
@@ -35,11 +36,17 @@ export const Dropdown = ({ label, items, disabled }: DropdownProps) => {
         {items.map((item) => (
           <MenuItem key={item.label}>
             <a
-              onClick={item.onClick}
+              onClick={() => {
+                if (item.disabled) {
+                  return
+                }
+                item.onClick?.()
+              }}
               className={clsx(
                 'block px-4 py-2 text-sm',
                 'cursor-pointer',
-                'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
+                item.disabled && 'opacity-50 cursor-not-allowed'
               )}
             >
               {item.label}
