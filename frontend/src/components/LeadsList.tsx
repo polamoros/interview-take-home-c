@@ -6,10 +6,12 @@ import clsx from 'clsx'
 import { Dropdown } from './desing-system/Dropdown'
 import { Button } from './desing-system/Button'
 import { LeadTableItem } from './LeadsTableItem'
+import { CustomMessageGeneratorModal } from './CustomMessageGeneratorModal'
 import { DeleteLeadsModal } from './DeleteLeadsModal'
 
 export const LeadsList: FC = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [enrichMessageModal, setEnrichMessageModal] = useState(false)
 
   const [allChecked, setAllChecked] = useState(false)
   const [selectedLeads, setSelectedLeads] = useState<Lead[]>([])
@@ -34,6 +36,61 @@ export const LeadsList: FC = () => {
     setSelectedLeads([])
     setDeleteModalVisible(false)
   }, [deleteLeadsMutation, selectedLeads])
+
+  const [customMessageLoading, setCustomMessageLoading] = useState(false)
+  const generateMessageMutation = useApiMutation('leads.generateMessage')
+  const [templateMessage, setTemplateMessage] = useState(
+    "Hi {firstName}, I'm doing a survey. \n Who would you rate working in {companyName} as a {jobTitle}, from 1 to 10?"
+  )
+
+  const [generateMessageErrors, setGenerateMessageErrors] = useState<string[]>()
+
+  const onTemplateChange = useCallback(
+    (message: string) => {
+      setTemplateMessage(message)
+
+      const fields = message.match(/{(.*?)}/g) || []
+
+      const missingFields = fields.reduce(
+        (acc, field) => {
+          const fieldName = field.slice(1, -1) // Remove curly braces
+          if (fieldName) {
+            const missingLeadsCount = selectedLeads.filter((lead) => !lead[fieldName]).length
+            if (missingLeadsCount > 0) {
+              acc.push({ field: fieldName, count: missingLeadsCount })
+            }
+          }
+          return acc
+        },
+        [] as { field: string; count: number }[]
+      )
+
+      if (missingFields.length > 0) {
+        const errors = missingFields.map(
+          ({ field, count }) => `Field {${field}} is missing in ${count} leads.`
+        )
+        errors.push('The message for them will be empty.')
+        setGenerateMessageErrors(errors)
+        return
+      }
+
+      setGenerateMessageErrors(undefined)
+    },
+    [selectedLeads, setGenerateMessageErrors]
+  )
+
+  const onGenerateMessage = useCallback(() => {
+    setCustomMessageLoading(true)
+    selectedLeads.forEach((lead) => {
+      try {
+        generateMessageMutation.mutate({ id: lead.id, message: templateMessage })
+      } catch (error) {
+        console.error(error)
+      }
+    })
+    setCustomMessageLoading(false)
+    setEnrichMessageModal(false)
+  }, [generateMessageMutation, selectedLeads, templateMessage])
 
   const toggleAll = useCallback(() => {
     setSelectedLeads(allChecked ? [] : leads)
@@ -70,6 +127,7 @@ export const LeadsList: FC = () => {
                 { label: 'Gender', disabled: true },
                 {
                   label: 'Message',
+                  onClick: () => setEnrichMessageModal(true),
                 },
               ]}
             />
@@ -128,6 +186,16 @@ export const LeadsList: FC = () => {
         visible={deleteModalVisible}
         onAccept={onDeleteSelectedLeads}
         onCancel={() => setDeleteModalVisible(false)}
+      />
+
+      <CustomMessageGeneratorModal
+        loading={customMessageLoading}
+        message={templateMessage}
+        onMessageChange={onTemplateChange}
+        visible={enrichMessageModal}
+        onAccept={onGenerateMessage}
+        onCancel={() => setEnrichMessageModal(false)}
+        errorMessage={generateMessageErrors}
       />
     </div>
   )
