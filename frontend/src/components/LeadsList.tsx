@@ -5,53 +5,13 @@ import { Lead } from '../api/types/leads'
 import clsx from 'clsx'
 import { Dropdown } from './desing-system/Dropdown'
 import { Button } from './desing-system/Button'
-import { Modal } from './desing-system/Modal'
-
-const LeadTableItem: FC<{ lead: Lead; selected: boolean; onSelect: () => void }> = ({
-  lead,
-  selected,
-  onSelect,
-}) => {
-  const createdAt = useMemo(() => new Date(lead.createdAt).toLocaleString(), [lead.createdAt])
-  const updatedAt = useMemo(() => new Date(lead.updatedAt).toLocaleString(), [lead.updatedAt])
-
-  return (
-    <tr
-      key={lead.email}
-      className={clsx(
-        selected && 'bg-genesy-500',
-        !selected && 'bg-genesy-600',
-        'text-sm text-left whitespace-nowrap'
-      )}
-    >
-      <td className="relative px-5 sm:w-12">
-        {selected && <div className="absolute inset-y-0 left-0 w-1 bg-genesy-700" />}
-        <input
-          type="checkbox"
-          className={clsx(
-            'absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded',
-            'border-genesy-700 text-genesy-700 focus:ring-genesy-700'
-          )}
-          value={lead.email}
-          checked={selected}
-          onChange={onSelect}
-        />
-      </td>
-      <td className="pr-3 py-2.5 truncate">{lead.firstName}</td>
-      <td className="px-3 py-2.5 truncate">{lead.lastName}</td>
-      <td className="px-3 py-2.5 truncate">{lead.countryCode}</td>
-      <td className="px-3 py-2.5 truncate">{}</td>
-      <td className="px-3 py-2.5 truncate">{lead.email}</td>
-      <td className="px-3 py-2.5 truncate">{lead.jobTitle}</td>
-      <td className="px-3 py-2.5 truncate">{lead.companyName}</td>
-      <td className="px-3 py-2.5 truncate">{createdAt}</td>
-      <td className="px-3 py-2.5 truncate">{updatedAt}</td>
-    </tr>
-  )
-}
+import { LeadTableItem } from './LeadsTableItem'
+import { CustomMessageGeneratorModal } from './CustomMessageGeneratorModal'
+import { DeleteLeadsModal } from './DeleteLeadsModal'
 
 export const LeadsList: FC = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [enrichMessageModal, setEnrichMessageModal] = useState(false)
 
   const [allChecked, setAllChecked] = useState(false)
   const [selectedLeads, setSelectedLeads] = useState<Lead[]>([])
@@ -76,6 +36,61 @@ export const LeadsList: FC = () => {
     setSelectedLeads([])
     setDeleteModalVisible(false)
   }, [deleteLeadsMutation, selectedLeads])
+
+  const [customMessageLoading, setCustomMessageLoading] = useState(false)
+  const generateMessageMutation = useApiMutation('leads.generateMessage')
+  const [templateMessage, setTemplateMessage] = useState(
+    "Hi {firstName}, I'm doing a survey. \n Who would you rate working in {companyName} as a {jobTitle}, from 1 to 10?"
+  )
+
+  const [generateMessageErrors, setGenerateMessageErrors] = useState<string[]>()
+
+  const onTemplateChange = useCallback(
+    (message: string) => {
+      setTemplateMessage(message)
+
+      const fields = message.match(/{(.*?)}/g) || []
+
+      const missingFields = fields.reduce(
+        (acc, field) => {
+          const fieldName = field.slice(1, -1) // Remove curly braces
+          if (fieldName) {
+            const missingLeadsCount = selectedLeads.filter((lead) => !lead[fieldName]).length
+            if (missingLeadsCount > 0) {
+              acc.push({ field: fieldName, count: missingLeadsCount })
+            }
+          }
+          return acc
+        },
+        [] as { field: string; count: number }[]
+      )
+
+      if (missingFields.length > 0) {
+        const errors = missingFields.map(
+          ({ field, count }) => `Field {${field}} is missing in ${count} leads.`
+        )
+        errors.push('The message for them will be empty.')
+        setGenerateMessageErrors(errors)
+        return
+      }
+
+      setGenerateMessageErrors(undefined)
+    },
+    [selectedLeads, setGenerateMessageErrors]
+  )
+
+  const onGenerateMessage = useCallback(() => {
+    setCustomMessageLoading(true)
+    selectedLeads.forEach((lead) => {
+      try {
+        generateMessageMutation.mutate({ id: lead.id, message: templateMessage })
+      } catch (error) {
+        console.error(error)
+      }
+    })
+    setCustomMessageLoading(false)
+    setEnrichMessageModal(false)
+  }, [generateMessageMutation, selectedLeads, templateMessage])
 
   const toggleAll = useCallback(() => {
     setSelectedLeads(allChecked ? [] : leads)
@@ -108,11 +123,11 @@ export const LeadsList: FC = () => {
             </Button>
             <Dropdown
               label="Enrich"
-              disabled
               items={[
-                { label: 'Gender' },
+                { label: 'Gender', disabled: true },
                 {
                   label: 'Message',
+                  onClick: () => setEnrichMessageModal(true),
                 },
               ]}
             />
@@ -166,21 +181,22 @@ export const LeadsList: FC = () => {
           </tbody>
         </table>
       </div>
-      <Modal
-        title={`Delete ${selectedLeads.length} ${selectedLeads.length > 1 ? 'Leads' : 'Lead'}`}
+
+      <DeleteLeadsModal
+        visible={deleteModalVisible}
         onAccept={onDeleteSelectedLeads}
         onCancel={() => setDeleteModalVisible(false)}
-        visible={deleteModalVisible}
-        setVisible={setDeleteModalVisible}
-        acceptLabel="Delete"
-        cancelLabel="Cancel"
-      >
-        <p className="text-sm text-gray-500">
-          Are you sure you want to delete the selected Leads?
-          <br />
-          This action <b>cannot be </b>undone.
-        </p>
-      </Modal>
+      />
+
+      <CustomMessageGeneratorModal
+        loading={customMessageLoading}
+        message={templateMessage}
+        onMessageChange={onTemplateChange}
+        visible={enrichMessageModal}
+        onAccept={onGenerateMessage}
+        onCancel={() => setEnrichMessageModal(false)}
+        errorMessage={generateMessageErrors}
+      />
     </div>
   )
 }
