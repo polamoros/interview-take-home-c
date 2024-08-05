@@ -11,7 +11,13 @@ export interface DeleteLeadsModalProps {
 export const DeleteLeadsModal = ({ visible, onAccept, onCancel }: DeleteLeadsModalProps) => {
   return (
     <Modal visible={visible}>
-      <ModalBody icon={<ExclamationTriangleIcon className="size-6 text-red-600" />}>
+      <ModalBody
+        icon={
+          <div className="mx-auto flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-red-100">
+            <ExclamationTriangleIcon className="size-6 text-red-600" />
+          </div>
+        }
+      >
         <ModalTitle>Delete Leads</ModalTitle>
         <div>
           Are you sure you want to delete the selected Leads?

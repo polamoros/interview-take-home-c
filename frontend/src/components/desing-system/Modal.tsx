@@ -20,11 +20,7 @@ export const ModalBody = ({
 }>) => {
   return (
     <div className="flex items-start mt-2 w-full gap-4">
-      {icon && (
-        <div className="mx-auto flex size-10 flex-shrink-0 items-center justify-center rounded-full bg-red-100">
-          {icon}
-        </div>
-      )}
+      {icon}
       <div className="text-left grow flex flex-col gap-2 text-sm text-gray-500 w-full">{children}</div>
     </div>
   )
