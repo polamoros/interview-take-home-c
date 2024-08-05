@@ -12,7 +12,7 @@ import { EnrichGenderModal } from './EnrichGenderModal'
 import { useNotifications } from './desing-system/Notification'
 import { AxiosError } from 'axios'
 import { ImportCSVModal } from './ImportCSVModal'
-import { set } from 'lodash'
+
 import { SpinnerIcon } from './icons/SpinnerIcon'
 
 export const LeadsList: FC = () => {
@@ -165,7 +165,8 @@ export const LeadsList: FC = () => {
 
   const importLeadsMutation = useApiMutation('leads.import')
 
-  const fileInputRef = useRef(null)
+  const fileInputRef = useRef(document.createElement('input')) as React.MutableRefObject<HTMLInputElement>
+
   const [leadsToImport, setLeadsToImport] = useState<Lead[]>([])
 
   const openFileExplorer = useCallback(
@@ -213,9 +214,6 @@ export const LeadsList: FC = () => {
 
   const onImportCSV = useCallback(
     (leads: Lead[]) => {
-      if (fileInputRef.current) {
-        fileInputRef.current = null
-      }
       setLoading(true)
       importLeadsMutation.mutate(
         { leads },
@@ -224,6 +222,7 @@ export const LeadsList: FC = () => {
             setLoading(false)
             setSelectedLeads([])
             setImportCSVModal(false)
+            fileInputRef.current.value = ''
 
             const { importedLeads, updatedLeads, failedLeads } = data
 

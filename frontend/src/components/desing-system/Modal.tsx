@@ -60,7 +60,7 @@ export const Modal = ({ visible, setVisible, size = 'md', children }: PropsWithC
             className={clsx(
               size === 'sm' && 'max-w-md',
               size === 'md' && 'max-w-lg',
-              size === 'lg' && 'max-w-2xl',
+              size === 'lg' && 'max-w-6xl',
               'relative overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all my-8 w-full p-6',
               // animation classes
               'transform data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:ease-out data-[leave]:ease-in',

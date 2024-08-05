@@ -31,38 +31,44 @@ export const ImportCSVModal = ({ leads, visible, disabled, onAccept, onCancel }:
       <ModalBody>
         <ModalTitle className="text-center">Import from CSV</ModalTitle>
         <div className="flex-col gap-2 text-xs">
-          <div className="w-full overflow-auto rounded-md">
-            <table className="table-fixed divide-y bg-genesy-100 text-genesy-900">
+          <div className="overflow-auto rounded-md flex justify-center bg-genesy-100 text-genesy-900">
+            <table className="table-fixed divide-y w-full">
               <thead>
                 <tr className="font-semibold whitespace-nowrap">
                   <th className="w-12"></th>
                   {headers.map((header) => (
-                    <th key={header} className="py-3.5 pr-3 text-left">
+                    <th key={`header-${header}`} className="py-3.5 pr-3 text-left truncate">
                       {header}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {validLeads.map((lead) => (
-                  <tr key={`${lead.firstName}${lead.lastName}`}>
+                {validLeads.map((lead, index) => (
+                  <tr key={`valid-${index}${lead.firstName}${lead.lastName}`}>
                     <td className="relative px-5 sm:w-12">
                       <CheckIcon className="text-green-500 size-5" />
                     </td>
                     {headers.map((header) => (
-                      <td key={header} className="py-3.5 pr-3 text-left truncate">
+                      <td
+                        key={`valid-${index}${lead.firstName}${lead.lastName}${header}`}
+                        className="py-3.5 pr-3 text-left truncate"
+                      >
                         {lead[header]}
                       </td>
                     ))}
                   </tr>
                 ))}
-                {invalidLeads.map((lead) => (
-                  <tr key={`${lead.firstName}${lead.lastName}`}>
+                {invalidLeads.map((lead, index) => (
+                  <tr key={`invalid-${index}${lead.firstName}${lead.lastName}`}>
                     <td className="relative px-5 sm:w-12">
                       <XMarkIcon className="text-red-500 size-5" />
                     </td>
                     {headers.map((header) => (
-                      <td key={header} className="py-3.5 pr-3 text-left truncate">
+                      <td
+                        key={`invalid-${index}${lead.firstName}${lead.lastName}${header}`}
+                        className="py-3.5 pr-3 text-left truncate"
+                      >
                         {lead[header]}
                       </td>
                     ))}
