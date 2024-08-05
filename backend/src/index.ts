@@ -175,6 +175,11 @@ app.post('/leads/import', async (req: Request, res: Response) => {
         gender: String(lead.gender ?? ''),
       }
 
+      if (!sanitazedData.firstName) {
+        failedLeads.push(lead as lead)
+        return
+      }
+
       try {
         if (existingLead) {
           const updatedLead = await prisma.lead.update({

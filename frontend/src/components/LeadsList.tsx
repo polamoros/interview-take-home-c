@@ -212,43 +212,47 @@ export const LeadsList: FC = () => {
     [setLeadsToImport, setImportCSVModal]
   )
 
-  const onImportCSV = useCallback(
-    (leads: Lead[]) => {
-      setLoading(true)
-      importLeadsMutation.mutate(
-        { leads },
-        {
-          onSuccess: (data) => {
-            setLoading(false)
-            setSelectedLeads([])
-            setImportCSVModal(false)
-            fileInputRef.current.value = ''
+  const onImportCSV = useCallback(() => {
+    setLoading(true)
+    importLeadsMutation.mutate(
+      { leads: leadsToImport },
+      {
+        onSuccess: (data) => {
+          setLoading(false)
+          setSelectedLeads([])
+          setImportCSVModal(false)
+          fileInputRef.current.value = ''
 
-            const { importedLeads, updatedLeads, failedLeads } = data
+          const { importedLeads, updatedLeads, failedLeads } = data
 
-            if (failedLeads.length > 0) {
-              showNotification(`${failedLeads.length} leads were not imported`, {
+          if (failedLeads.length > 0) {
+            showNotification(
+              `${failedLeads.length} ${failedLeads.length === 1 ? 'Lead was' : 'Leads were'} not imported`,
+              {
                 type: 'error',
-              })
-            }
-            if (importedLeads.length > 0) {
-              showNotification(`${importedLeads.length} Leads were imported`)
-            }
-            if (updatedLeads.length > 0) {
-              showNotification(`${updatedLeads.length} Leads were updated`)
-            }
-          },
-          onError: (error) => {
-            const errorData = (error as AxiosError)?.response?.data as { message: string }
-            showNotification(errorData.message || error.message, {
-              type: 'error',
-            })
-          },
-        }
-      )
-    },
-    [showNotification, importLeadsMutation]
-  )
+              }
+            )
+          }
+          if (importedLeads.length > 0) {
+            showNotification(
+              `${importedLeads.length} ${importedLeads.length === 1 ? 'Lead was' : 'Leads were'} imported`
+            )
+          }
+          if (updatedLeads.length > 0) {
+            showNotification(
+              `${updatedLeads.length} ${updatedLeads.length === 1 ? 'Lead was' : 'Leads were'} updated`
+            )
+          }
+        },
+        onError: (error) => {
+          const errorData = (error as AxiosError)?.response?.data as { message: string }
+          showNotification(errorData.message || error.message, {
+            type: 'error',
+          })
+        },
+      }
+    )
+  }, [showNotification, importLeadsMutation, leadsToImport])
 
   const toggleAll = useCallback(() => {
     setSelectedLeads(allChecked ? [] : leads)
