@@ -31,8 +31,8 @@ export const ImportCSVModal = ({ leads, visible, disabled, onAccept, onCancel }:
       <ModalBody>
         <ModalTitle className="text-center">Import from CSV</ModalTitle>
         <div className="flex-col gap-2 text-xs">
-          <div className="overflow-auto rounded-md flex justify-center bg-genesy-100 text-genesy-900">
-            <table className="table-fixed divide-y w-full">
+          <div className="max-h-96 overflow-auto rounded-md flex justify-center bg-genesy-100 text-genesy-900">
+            <table className="table-fixed divide-y w-full h-full">
               <thead>
                 <tr className="font-semibold whitespace-nowrap">
                   <th className="w-12"></th>
