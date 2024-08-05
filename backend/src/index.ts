@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { lead, PrismaClient } from '@prisma/client'
 import express, { Request, Response } from 'express'
 import axios from 'axios'
 
@@ -135,13 +135,65 @@ app.post('/leads/:id/enrich-gender', async (req: Request, res: Response) => {
         where: { id: Number(id) },
         data: { gender: String(result.gender) },
       })
-      res.json(newLead)
+      return res.json(newLead)
     } else {
-      res.status(404).json({ error: 'Gender not found' })
+      return res.status(404).json({ error: 'Gender not found' })
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to guess gender' })
   }
+})
+
+app.post('/leads/import', async (req: Request, res: Response) => {
+  const { leads } = req.body
+
+  const importedLeads: lead[] = []
+  const updatedLeads: lead[] = []
+  const failedLeads: lead[] = []
+
+  await Promise.all(
+    leads.map(async (lead: { [key: string]: any }) => {
+      const existingLead = await prisma.lead.findFirst({
+        where: {
+          firstName: lead.firstName,
+          lastName: lead.lastName,
+        },
+      })
+
+      const sanitazedData = {
+        firstName: String(lead.firstName),
+        lastName: String(lead.lastName ?? ''),
+        email: String(lead.email ?? ''),
+        jobTitle: String(lead.jobTitle ?? ''),
+        countryCode: String(lead.countryCode ?? ''),
+        companyName: String(lead.companyName ?? ''),
+        message: String(lead.message ?? ''),
+        gender: String(lead.gender ?? ''),
+      }
+
+      try {
+        if (existingLead) {
+          const updatedLead = await prisma.lead.update({
+            where: {
+              id: existingLead.id,
+            },
+            data: sanitazedData,
+          })
+          updatedLeads.push(updatedLead)
+          return
+        } else {
+          const importedLead = await prisma.lead.create({
+            data: sanitazedData,
+          })
+          importedLeads.push(importedLead)
+          return
+        }
+      } catch (error) {
+        failedLeads.push(lead as lead)
+      }
+    })
+  )
+  res.json({ importedLeads, updatedLeads, failedLeads })
 })
 
 app.listen(4000, () => {
