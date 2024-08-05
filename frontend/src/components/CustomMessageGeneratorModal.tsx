@@ -9,7 +9,7 @@ export interface CustomMessageGeneratorModalProps {
   onCancel: () => void
   visible: boolean
   errorMessage?: string[]
-  loading?: boolean
+  disabled?: boolean
 }
 
 export const CustomMessageGeneratorModal = ({
@@ -19,7 +19,7 @@ export const CustomMessageGeneratorModal = ({
   onCancel,
   visible,
   errorMessage,
-  loading,
+  disabled,
 }: CustomMessageGeneratorModalProps) => {
   // Lets hardcode the available variables for now
   const availableVariables = [
@@ -65,10 +65,10 @@ export const CustomMessageGeneratorModal = ({
       </ModalBody>
 
       <ModalFooter>
-        <Button onClick={onAccept} disabled={loading}>
+        <Button onClick={onAccept} disabled={disabled}>
           Generate
         </Button>
-        <Button onClick={onCancel} transparent disabled={loading}>
+        <Button onClick={onCancel} transparent disabled={disabled}>
           Cancel
         </Button>
       </ModalFooter>

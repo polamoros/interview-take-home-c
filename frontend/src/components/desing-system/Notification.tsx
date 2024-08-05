@@ -85,7 +85,7 @@ const NotificationContainer = () => {
                     )}
                   </div>
                   <div className="ml-3 w-0 flex-1 pt-0.5">
-                    <p className="text-sm font-medium text-gray-900">{notification.title}</p>
+                    <p className="text-sm font-medium text-gray-900 text-left">{notification.title}</p>
                     {notification.body && <p className="mt-1 text-sm text-gray-700">{notification.body}</p>}
                   </div>
                   <div className="ml-4 flex-shrink-0">

@@ -6,6 +6,7 @@ import { LeadsUpdateInput, LeadsUpdateOutput } from '../types/leads/update'
 import { LeadsGenerateMessageInput, LeadsGenerateMessageOutput } from '../types/leads/generateMessage'
 import { ApiModule, endpoint } from '../utils'
 import { LeadsEnrichGenderInput, LeadsEnrichGenderOutput } from '../types/leads/enrichGender'
+import { LeadsImportInput, LeadsImportOutput } from '../types/leads/import'
 
 export const leadsApi = {
   getMany: endpoint<LeadsGetManyOutput, LeadsGetManyInput>('get', '/leads'),
@@ -21,4 +22,5 @@ export const leadsApi = {
     'post',
     ({ id }) => `/leads/${id}/enrich-gender`
   ),
+  import: endpoint<LeadsImportOutput, LeadsImportInput>('post', '/leads/import'),
 } as const satisfies ApiModule
