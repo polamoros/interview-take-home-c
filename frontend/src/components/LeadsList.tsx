@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useMemo, useRef, useState } from 'react'
 import { api, useApiMutation } from '../api'
 import { Lead } from '../api/types/leads'
 import clsx from 'clsx'
@@ -11,6 +11,7 @@ import { DeleteLeadsModal } from './DeleteLeadsModal'
 import { EnrichGenderModal } from './EnrichGenderModal'
 import { useNotifications } from './desing-system/Notification'
 import { AxiosError } from 'axios'
+import { ImportCSVModal } from './ImportCSVModal'
 
 export const LeadsList: FC = () => {
   const { showNotification } = useNotifications()
@@ -18,6 +19,7 @@ export const LeadsList: FC = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [enrichMessageModal, setEnrichMessageModal] = useState(false)
   const [enrichGenderModal, setEnrichGenderModal] = useState(false)
+  const [importCSVModal, setImportCSVModal] = useState(false)
 
   const [allChecked, setAllChecked] = useState(false)
   const [selectedLeads, setSelectedLeads] = useState<Lead[]>([])
@@ -125,6 +127,90 @@ export const LeadsList: FC = () => {
     setEnrichGenderModal(false)
   }, [enrichGenderMutation, selectedLeads, showNotification])
 
+  const importLeadsMutation = useApiMutation('leads.import')
+
+  const fileInputRef = useRef<string>()
+  const [leadsToImport, setLeadsToImport] = useState<Lead[]>([])
+
+  const openFileExplorer = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (!file) {
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const text = e.target?.result as string
+        const rows = text.split('\n').filter((row) => row.trim() !== '')
+
+        if (rows.length === 0) {
+          setLeadsToImport([])
+          setImportCSVModal(true)
+          return
+        }
+
+        // Get the header and rows
+        const [header, ...dataRows] = rows
+        const keys = header.split(',').map((key) => key.trim())
+
+        const leads = dataRows
+          .map((row) => {
+            const values = row.split(',').map((value) => value.trim())
+            return keys.reduce(
+              (acc, key, index) => ({
+                ...acc,
+                [key]: values[index] || '',
+              }),
+              {} as Lead
+            )
+          })
+          .filter((lead) => Object.values(lead).some((value) => value !== ''))
+
+        setLeadsToImport(leads)
+        setImportCSVModal(true)
+      }
+      reader.readAsText(file)
+    },
+    [setLeadsToImport, setImportCSVModal]
+  )
+
+  const onImportCSV = useCallback(
+    (leads: Lead[]) => {
+      if (fileInputRef.current) {
+        fileInputRef.current = ''
+      }
+      importLeadsMutation.mutate(
+        { leads },
+        {
+          onError: (error) => {
+            const errorData = (error as AxiosError)?.response?.data as { message: string }
+            showNotification(errorData.message || error.message, {
+              type: 'error',
+            })
+          },
+          onSuccess: (data) => {
+            const { importedLeads, updatedLeads, failedLeads } = data
+
+            if (failedLeads.length > 0) {
+              showNotification(`Some leads failed to import ${failedLeads.length}`, {
+                type: 'error',
+              })
+            }
+            if (importedLeads.length > 0) {
+              showNotification(`${importedLeads.length} Leads were imported`)
+            }
+            if (updatedLeads.length > 0) {
+              showNotification(`${updatedLeads.length} Leads were updated`)
+            }
+            setImportCSVModal(false)
+          },
+        }
+      )
+    },
+    [showNotification, importLeadsMutation]
+  )
+
   const toggleAll = useCallback(() => {
     setSelectedLeads(allChecked ? [] : leads)
     setAllChecked(!allChecked)
@@ -142,7 +228,7 @@ export const LeadsList: FC = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-x-3 px-4 text-genesy-100 h-10">
+      <div className="flex items-center gap-x-3 text-genesy-100 h-10">
         <div className="text-sm font-semibold">
           {selectedLeads.length > 0 && <div>{selectedLeads.length} selected</div>}
           {selectedLeads.length === 0 && <div>{leads.length} leads</div>}
@@ -166,6 +252,18 @@ export const LeadsList: FC = () => {
             />
           </>
         )}
+        <div className="flex grow justify-end">
+          <Button className="relative">
+            <label className="pointer-events-none">Import from CSV</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={openFileExplorer}
+              className="opacity-0 absolute inset-0 cursor-pointer z-10"
+            />
+          </Button>
+        </div>
       </div>
 
       <div className="w-full overflow-auto rounded-md">
@@ -236,6 +334,13 @@ export const LeadsList: FC = () => {
         visible={enrichGenderModal}
         onAccept={onEnrichGender}
         onCancel={() => setEnrichGenderModal(false)}
+      />
+
+      <ImportCSVModal
+        visible={importCSVModal}
+        leads={leadsToImport}
+        onAccept={onImportCSV}
+        onCancel={() => setImportCSVModal(false)}
       />
     </div>
   )
