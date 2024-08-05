@@ -1,4 +1,5 @@
 import genesyLogo from './assets/genesy-ai-logo.svg'
+import { NotificationsProvider } from './components/desing-system/Notification'
 import { LeadsList } from './components/LeadsList'
 
 function App() {
@@ -11,7 +12,9 @@ function App() {
       </div>
       <div className="flex flex-col gap-6">
         <h1 className="title">Genesy AI</h1>
-        <LeadsList />
+        <NotificationsProvider>
+          <LeadsList />
+        </NotificationsProvider>
       </div>
     </main>
   )
