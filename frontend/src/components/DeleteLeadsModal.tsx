@@ -4,11 +4,12 @@ import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 
 export interface DeleteLeadsModalProps {
   visible: boolean
+  disabled?: boolean
   onAccept: () => void
   onCancel: () => void
 }
 
-export const DeleteLeadsModal = ({ visible, onAccept, onCancel }: DeleteLeadsModalProps) => {
+export const DeleteLeadsModal = ({ visible, disabled, onAccept, onCancel }: DeleteLeadsModalProps) => {
   return (
     <Modal visible={visible}>
       <ModalBody
@@ -27,10 +28,10 @@ export const DeleteLeadsModal = ({ visible, onAccept, onCancel }: DeleteLeadsMod
       </ModalBody>
 
       <ModalFooter>
-        <Button onClick={onAccept} className="text-white bg-red-600 hover:bg-red-500">
+        <Button onClick={onAccept} className="text-white bg-red-600 hover:bg-red-500" disabled={disabled}>
           Delete
         </Button>
-        <Button onClick={onCancel} transparent>
+        <Button onClick={onCancel} transparent disabled={disabled}>
           Cancel
         </Button>
       </ModalFooter>

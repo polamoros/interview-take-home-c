@@ -62,12 +62,16 @@ app.patch('/leads/:id', async (req: Request, res: Response) => {
 
 app.delete('/leads/:id', async (req: Request, res: Response) => {
   const { id } = req.params
-  await prisma.lead.delete({
-    where: {
-      id: Number(id),
-    },
-  })
-  res.json()
+  try {
+    await prisma.lead.delete({
+      where: {
+        id: Number(id),
+      },
+    })
+    res.json()
+  } catch (error) {
+    res.status(500).json({ message: 'There was an error deleting the lead' })
+  }
 })
 
 app.post('/leads/:id/message', async (req: Request, res: Response) => {

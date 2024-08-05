@@ -7,11 +7,12 @@ import { useMemo } from 'react'
 export interface ImportCSVModalProps {
   leads: Lead[]
   visible: boolean
+  disabled?: boolean
   onAccept: (leads: Lead[]) => void
   onCancel: () => void
 }
 
-export const ImportCSVModal = ({ leads, visible, onAccept, onCancel }: ImportCSVModalProps) => {
+export const ImportCSVModal = ({ leads, visible, disabled, onAccept, onCancel }: ImportCSVModalProps) => {
   const headers = useMemo(() => {
     if (!leads || leads.length === 0) {
       return []
@@ -28,7 +29,7 @@ export const ImportCSVModal = ({ leads, visible, onAccept, onCancel }: ImportCSV
   return (
     <Modal visible={visible} size="lg">
       <ModalBody>
-        <ModalTitle>Import from CSV</ModalTitle>
+        <ModalTitle className="text-center">Import from CSV</ModalTitle>
         <div className="flex-col gap-2 text-xs">
           <div className="w-full overflow-auto rounded-md">
             <table className="table-fixed divide-y bg-genesy-100 text-genesy-900">
@@ -81,8 +82,9 @@ export const ImportCSVModal = ({ leads, visible, onAccept, onCancel }: ImportCSV
             {validLeads.length > 0 && (
               <div className="flex items-center gap-2">
                 <CheckIcon className="text-green-500 size-5" />
-                {validLeads.length === leads.length && <span>All leads are valid</span>}
-                {validLeads.length !== leads.length && <span>{validLeads.length} leads are valid</span>}
+                <span>
+                  {validLeads.length === leads.length && 'All '} {validLeads.length} leads are valid
+                </span>
               </div>
             )}
           </div>
@@ -91,13 +93,14 @@ export const ImportCSVModal = ({ leads, visible, onAccept, onCancel }: ImportCSV
 
       <ModalFooter>
         <Button
+          disabled={disabled || validLeads.length === 0}
           onClick={() => {
             onAccept(validLeads)
           }}
         >
           Import
         </Button>
-        <Button onClick={onCancel} transparent>
+        <Button disabled={disabled} onClick={onCancel} transparent>
           Cancel
         </Button>
       </ModalFooter>

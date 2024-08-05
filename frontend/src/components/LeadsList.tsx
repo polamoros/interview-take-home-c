@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { FC, useCallback, useMemo, useRef, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, useApiMutation } from '../api'
 import { Lead } from '../api/types/leads'
 import clsx from 'clsx'
@@ -12,17 +12,17 @@ import { EnrichGenderModal } from './EnrichGenderModal'
 import { useNotifications } from './desing-system/Notification'
 import { AxiosError } from 'axios'
 import { ImportCSVModal } from './ImportCSVModal'
+import { set } from 'lodash'
+import { SpinnerIcon } from './icons/SpinnerIcon'
 
 export const LeadsList: FC = () => {
+  const [loading, setLoading] = useState(false)
   const { showNotification } = useNotifications()
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [enrichMessageModal, setEnrichMessageModal] = useState(false)
   const [enrichGenderModal, setEnrichGenderModal] = useState(false)
   const [importCSVModal, setImportCSVModal] = useState(false)
-
-  const [allChecked, setAllChecked] = useState(false)
-  const [selectedLeads, setSelectedLeads] = useState<Lead[]>([])
 
   const leadsQuery = useQuery({
     queryKey: ['leads', 'getMany'],
@@ -31,21 +31,45 @@ export const LeadsList: FC = () => {
 
   const leads = useMemo(() => leadsQuery.data ?? [], [leadsQuery.data])
 
+  const [allChecked, setAllChecked] = useState(false)
+  const [selectedLeads, setSelectedLeads] = useState<Lead[]>([])
+
+  useEffect(() => {
+    if (selectedLeads.length === leads.length) {
+      setAllChecked(true)
+    } else {
+      setAllChecked(false)
+    }
+  }, [selectedLeads, leads])
+
   const deleteLeadsMutation = useApiMutation('leads.delete')
 
   const onDeleteSelectedLeads = useCallback(() => {
-    selectedLeads.forEach((lead) => {
-      try {
-        deleteLeadsMutation.mutate({ id: lead.id })
-      } catch (error) {
-        console.error(error)
-      }
+    setLoading(true)
+    selectedLeads.forEach((lead, index) => {
+      deleteLeadsMutation.mutate(
+        { id: lead.id },
+        {
+          onSuccess: () => {
+            if (index === selectedLeads.length - 1) {
+              setLoading(false)
+              setSelectedLeads([])
+              setDeleteModalVisible(false)
+              showNotification('Leads were deleted')
+            }
+          },
+          onError: (error) => {
+            setLoading(false)
+            const errorData = (error as AxiosError)?.response?.data as { message: string }
+            showNotification(errorData.message || error.message, {
+              type: 'error',
+            })
+          },
+        }
+      )
     })
-    setSelectedLeads([])
-    setDeleteModalVisible(false)
-  }, [deleteLeadsMutation, selectedLeads])
+  }, [deleteLeadsMutation, selectedLeads, showNotification])
 
-  const [customMessageLoading, setCustomMessageLoading] = useState(false)
   const generateMessageMutation = useApiMutation('leads.generateMessage')
   const [templateMessage, setTemplateMessage] = useState(
     "Hi {firstName}, I'm doing a survey. \n Who would you rate working in {companyName} as a {jobTitle}, from 1 to 10?"
@@ -88,11 +112,19 @@ export const LeadsList: FC = () => {
   )
 
   const onGenerateMessage = useCallback(() => {
-    setCustomMessageLoading(true)
-    selectedLeads.forEach((lead) => {
+    setLoading(true)
+    selectedLeads.forEach((lead, index) => {
       generateMessageMutation.mutate(
         { id: lead.id, message: templateMessage },
         {
+          onSuccess: () => {
+            if (index === selectedLeads.length - 1) {
+              setLoading(false)
+              setSelectedLeads([])
+              setEnrichMessageModal(false)
+              showNotification('Messages were generated for the selected leads')
+            }
+          },
           onError: (error) => {
             const errorData = (error as AxiosError)?.response?.data as { message: string }
             showNotification(errorData.message || error.message, {
@@ -102,18 +134,24 @@ export const LeadsList: FC = () => {
         }
       )
     })
-    showNotification('Messages were generated for the selected leads')
-    setCustomMessageLoading(false)
-    setEnrichMessageModal(false)
   }, [generateMessageMutation, selectedLeads, templateMessage, showNotification])
 
   const enrichGenderMutation = useApiMutation('leads.enrichGender')
 
   const onEnrichGender = useCallback(() => {
-    selectedLeads.forEach((lead) => {
+    setLoading(true)
+    selectedLeads.forEach((lead, index) => {
       enrichGenderMutation.mutate(
         { id: lead.id },
         {
+          onSuccess: () => {
+            if (index === selectedLeads.length - 1) {
+              setLoading(false)
+              setSelectedLeads([])
+              setEnrichGenderModal(false)
+              showNotification('Gender was enriched for the selected leads')
+            }
+          },
           onError: (error: Error) => {
             const errorData = (error as AxiosError)?.response?.data as { message: string }
             showNotification(errorData.message || error.message, {
@@ -123,13 +161,11 @@ export const LeadsList: FC = () => {
         }
       )
     })
-    showNotification('Gender was enriched for the selected leads')
-    setEnrichGenderModal(false)
   }, [enrichGenderMutation, selectedLeads, showNotification])
 
   const importLeadsMutation = useApiMutation('leads.import')
 
-  const fileInputRef = useRef<string>()
+  const fileInputRef = useRef(null)
   const [leadsToImport, setLeadsToImport] = useState<Lead[]>([])
 
   const openFileExplorer = useCallback(
@@ -178,22 +214,21 @@ export const LeadsList: FC = () => {
   const onImportCSV = useCallback(
     (leads: Lead[]) => {
       if (fileInputRef.current) {
-        fileInputRef.current = ''
+        fileInputRef.current = null
       }
+      setLoading(true)
       importLeadsMutation.mutate(
         { leads },
         {
-          onError: (error) => {
-            const errorData = (error as AxiosError)?.response?.data as { message: string }
-            showNotification(errorData.message || error.message, {
-              type: 'error',
-            })
-          },
           onSuccess: (data) => {
+            setLoading(false)
+            setSelectedLeads([])
+            setImportCSVModal(false)
+
             const { importedLeads, updatedLeads, failedLeads } = data
 
             if (failedLeads.length > 0) {
-              showNotification(`Some leads failed to import ${failedLeads.length}`, {
+              showNotification(`${failedLeads.length} leads were not imported`, {
                 type: 'error',
               })
             }
@@ -203,7 +238,12 @@ export const LeadsList: FC = () => {
             if (updatedLeads.length > 0) {
               showNotification(`${updatedLeads.length} Leads were updated`)
             }
-            setImportCSVModal(false)
+          },
+          onError: (error) => {
+            const errorData = (error as AxiosError)?.response?.data as { message: string }
+            showNotification(errorData.message || error.message, {
+              type: 'error',
+            })
           },
         }
       )
@@ -237,11 +277,13 @@ export const LeadsList: FC = () => {
         {selectedLeads.length > 0 && (
           <>
             <div className="w-0.5 h-6 bg-genesy-600" />
-            <Button onClick={() => setDeleteModalVisible(true)} className="">
+            <Button onClick={() => setDeleteModalVisible(true)} disabled={loading}>
               Delete
             </Button>
+
             <Dropdown
               label="Enrich"
+              disabled={loading}
               items={[
                 { label: 'Gender', onClick: () => setEnrichGenderModal(true) },
                 {
@@ -253,20 +295,30 @@ export const LeadsList: FC = () => {
           </>
         )}
         <div className="flex grow justify-end">
-          <Button className="relative">
-            <label className="pointer-events-none">Import from CSV</label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              onChange={openFileExplorer}
-              className="opacity-0 absolute inset-0 cursor-pointer z-10"
-            />
+          <Button disabled={loading}>
+            <label className="cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              Import from CSV
+            </label>
           </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={openFileExplorer}
+            className="hidden"
+          />
         </div>
       </div>
 
-      <div className="w-full overflow-auto rounded-md">
+      <div className="w-full overflow-auto rounded-md relative">
+        {loading && (
+          <div className="absolute inset-0 bg-genesy-600 opacity-50">
+            <div className="flex items-center justify-center h-full">
+              <SpinnerIcon className="animate-spin" />
+            </div>
+          </div>
+        )}
+
         <table className="table-fixed divide-y bg-genesy-800 text-genesy-50 shadow-xl">
           <thead>
             <tr className="text-sm font-semibold whitespace-nowrap">
@@ -296,6 +348,14 @@ export const LeadsList: FC = () => {
             </tr>
           </thead>
           <tbody className={clsx('divide-y divide-genesy-200 overflow-auto h-80', 'bg-genesy-600')}>
+            {leads.length === 0 && (
+              <tr>
+                <td colSpan={11} className="text-center py-4">
+                  No leads found
+                </td>
+              </tr>
+            )}
+
             {leads.map((lead) => (
               <LeadTableItem
                 key={lead.email}
@@ -315,13 +375,14 @@ export const LeadsList: FC = () => {
       </div>
 
       <DeleteLeadsModal
+        disabled={loading}
         visible={deleteModalVisible}
         onAccept={onDeleteSelectedLeads}
         onCancel={() => setDeleteModalVisible(false)}
       />
 
       <CustomMessageGeneratorModal
-        loading={customMessageLoading}
+        disabled={loading}
         message={templateMessage}
         onMessageChange={onTemplateChange}
         visible={enrichMessageModal}
