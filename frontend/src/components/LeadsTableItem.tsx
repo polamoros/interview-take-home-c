@@ -38,6 +38,7 @@ export const LeadTableItem: FC<{ lead: Lead; selected: boolean; onSelect: () => 
       <td className="px-3 py-2.5 truncate max-w-80" title={lead.message}>
         {lead.message}
       </td>
+      <td className="px-3 py-2.5 truncate">{lead.gender}</td>
       <td className="px-3 py-2.5 truncate">{lead.email}</td>
       <td className="px-3 py-2.5 truncate">{lead.jobTitle}</td>
       <td className="px-3 py-2.5 truncate">{lead.companyName}</td>

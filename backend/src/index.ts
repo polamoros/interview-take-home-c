@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import express, { Request, Response } from 'express'
+import axios from 'axios'
+
 const prisma = new PrismaClient()
 const app = express()
 app.use(express.json())
@@ -104,6 +106,42 @@ app.post('/leads/:id/message', async (req: Request, res: Response) => {
   })
 
   res.json(newLead)
+})
+
+app.post('/leads/:id/enrich-gender', async (req: Request, res: Response) => {
+  const { id } = req.params
+
+  const lead = await prisma.lead.findUnique({
+    where: {
+      id: Number(id),
+    },
+  })
+
+  if (!lead) {
+    return res.status(404).json({ message: 'Lead not found' })
+  }
+
+  // use genderize API to retrive the lead gener
+  try {
+    const response = await axios.get<{
+      gender: string
+      probability: number
+      count: number
+    }>(`https://api.genderize.io?name=${lead.firstName}`)
+    const result = response.data
+
+    if (result && result.gender) {
+      const newLead = await prisma.lead.update({
+        where: { id: Number(id) },
+        data: { gender: String(result.gender) },
+      })
+      res.json(newLead)
+    } else {
+      res.status(404).json({ error: 'Gender not found' })
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to guess gender' })
+  }
 })
 
 app.listen(4000, () => {
