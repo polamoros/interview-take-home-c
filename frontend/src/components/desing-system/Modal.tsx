@@ -4,9 +4,14 @@ import { PropsWithChildren } from 'react'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import clsx from 'clsx'
 
-export const ModalTitle = ({ children }: PropsWithChildren) => {
+export const ModalTitle = ({
+  className,
+  children,
+}: PropsWithChildren<{
+  className?: string
+}>) => {
   return (
-    <DialogTitle as="h3" className="text-base font-semibold leading-6 text-gray-900">
+    <DialogTitle as="h3" className={clsx('text-lg font-semibold text-gray-900', className)}>
       {children}
     </DialogTitle>
   )
