@@ -33,9 +33,10 @@ export const ModalFooter = ({ children }: PropsWithChildren) => {
 export interface ModalProps {
   visible: boolean
   setVisible?: (visible: boolean) => void
+  size?: 'sm' | 'md' | 'lg'
 }
 
-export const Modal = ({ visible, setVisible, children }: PropsWithChildren<ModalProps>) => {
+export const Modal = ({ visible, setVisible, size = 'md', children }: PropsWithChildren<ModalProps>) => {
   return (
     <Dialog open={visible} onClose={() => setVisible?.(false)} className="relative z-10">
       <DialogBackdrop
@@ -52,7 +53,10 @@ export const Modal = ({ visible, setVisible, children }: PropsWithChildren<Modal
           <DialogPanel
             transition
             className={clsx(
-              'relative overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all my-8 w-full max-w-lg p-6',
+              size === 'sm' && 'max-w-md',
+              size === 'md' && 'max-w-lg',
+              size === 'lg' && 'max-w-2xl',
+              'relative overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all my-8 w-full p-6',
               // animation classes
               'transform data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:ease-out data-[leave]:ease-in',
               'data-[enter]:duration-300 data-[leave]:duration-200 data-[closed]:translate-y-0 data-[closed]:scale-95'
