@@ -8,10 +8,16 @@ import { Button } from './desing-system/Button'
 import { LeadTableItem } from './LeadsTableItem'
 import { CustomMessageGeneratorModal } from './CustomMessageGeneratorModal'
 import { DeleteLeadsModal } from './DeleteLeadsModal'
+import { EnrichGenderModal } from './EnrichGenderModal'
+import { useNotifications } from './desing-system/Notification'
+import { AxiosError } from 'axios'
 
 export const LeadsList: FC = () => {
+  const { showNotification } = useNotifications()
+
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [enrichMessageModal, setEnrichMessageModal] = useState(false)
+  const [enrichGenderModal, setEnrichGenderModal] = useState(false)
 
   const [allChecked, setAllChecked] = useState(false)
   const [selectedLeads, setSelectedLeads] = useState<Lead[]>([])
@@ -82,15 +88,42 @@ export const LeadsList: FC = () => {
   const onGenerateMessage = useCallback(() => {
     setCustomMessageLoading(true)
     selectedLeads.forEach((lead) => {
-      try {
-        generateMessageMutation.mutate({ id: lead.id, message: templateMessage })
-      } catch (error) {
-        console.error(error)
-      }
+      generateMessageMutation.mutate(
+        { id: lead.id, message: templateMessage },
+        {
+          onError: (error) => {
+            const errorData = (error as AxiosError)?.response?.data as { message: string }
+            showNotification(errorData.message || error.message, {
+              type: 'error',
+            })
+          },
+        }
+      )
     })
+    showNotification('Messages were generated for the selected leads')
     setCustomMessageLoading(false)
     setEnrichMessageModal(false)
-  }, [generateMessageMutation, selectedLeads, templateMessage])
+  }, [generateMessageMutation, selectedLeads, templateMessage, showNotification])
+
+  const enrichGenderMutation = useApiMutation('leads.enrichGender')
+
+  const onEnrichGender = useCallback(() => {
+    selectedLeads.forEach((lead) => {
+      enrichGenderMutation.mutate(
+        { id: lead.id },
+        {
+          onError: (error: Error) => {
+            const errorData = (error as AxiosError)?.response?.data as { message: string }
+            showNotification(errorData.message || error.message, {
+              type: 'error',
+            })
+          },
+        }
+      )
+    })
+    showNotification('Gender was enriched for the selected leads')
+    setEnrichGenderModal(false)
+  }, [enrichGenderMutation, selectedLeads, showNotification])
 
   const toggleAll = useCallback(() => {
     setSelectedLeads(allChecked ? [] : leads)
@@ -124,7 +157,7 @@ export const LeadsList: FC = () => {
             <Dropdown
               label="Enrich"
               items={[
-                { label: 'Gender', disabled: true },
+                { label: 'Gender', onClick: () => setEnrichGenderModal(true) },
                 {
                   label: 'Message',
                   onClick: () => setEnrichMessageModal(true),
@@ -156,6 +189,7 @@ export const LeadsList: FC = () => {
               <th className="px-3 py-3.5 text-left">Last name</th>
               <th className="px-3 py-3.5 text-left">Country</th>
               <th className="px-3 py-3.5 text-left">Message</th>
+              <th className="px-3 py-3.5 text-left">Gender</th>
               <th className="px-3 py-3.5 text-left">Email</th>
               <th className="px-3 py-3.5 text-left">Job title</th>
               <th className="px-3 py-3.5 text-left">Company</th>
@@ -196,6 +230,12 @@ export const LeadsList: FC = () => {
         onAccept={onGenerateMessage}
         onCancel={() => setEnrichMessageModal(false)}
         errorMessage={generateMessageErrors}
+      />
+
+      <EnrichGenderModal
+        visible={enrichGenderModal}
+        onAccept={onEnrichGender}
+        onCancel={() => setEnrichGenderModal(false)}
       />
     </div>
   )
