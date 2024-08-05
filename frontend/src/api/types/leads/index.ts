@@ -9,4 +9,5 @@ export type Lead = {
   countryCode?: string
   companyName?: string
   message?: string
+  gender?: string
 }
